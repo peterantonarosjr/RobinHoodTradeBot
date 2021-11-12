@@ -1,48 +1,43 @@
-import robin_stocks.robinhood as r
-import robin_stocks.gemini as c
+from TradeIndicators.Scalping import Scalping
+from Utilities import *
 import datetime
 import time
 
-def login(numOfDays):
-    seconds = 60
-    secPerMinute = seconds * 60
-    secPerHour = secPerMinute * 60
-    secPerDay = secPerHour * 24
-    loginDuration = numOfDays * secPerDay
-
-    credentialFile = open('/home/peterjr/Pycharm-Workspace/RobinHoodTradeBot/RH.txt').read().splitlines()
-    EMAIL = credentialFile[0]
-    PASSWORD = credentialFile[1]
-    KEY = credentialFile[2]
-
-    try:
-        r.login(EMAIL, PASSWORD, expiresIn=loginDuration, store_session=False)
-        c.authentication.login(EMAIL, PASSWORD)
-        c.authentication.heartbeat(jsonify=None)
-        print("Successful Login/Authentication")
-    except:
-        print("Failed Login/Authentication")
-
-# User logout
-def logout():
-    r.logout()
-
-
 def main(loginDuration,mainUpdateDelta):
     #Times relevant to login and login duration
-    login(loginDuration)
+    userLogin(loginDuration)
     loginTime = datetime.datetime.now()
     logoutTime = loginTime + datetime.timedelta(loginDuration)
     currentTime = datetime.datetime.now()
 
-    while currentTime < logoutTime:
-        #Do stuff here
+    #Crypto of Interest
+    cryptoR = "ETH"
+    cryptoC = "ETHUSD"
 
+    cryptoDataFrame = initCryptoDataFrame()
+    tradeDataFrame = initTradeDataFrame()
+    scalper = Scalping(cryptoDataFrame,tradeDataFrame)
+
+
+    while currentTime < logoutTime:
+        #cryptoDataFrame = updateCryptoDataFrame(cryptoDataFrame)
+        #Trading Logic Here
+        #
+        #
+        cryptoDataFrame = updateCryptoDataFrame(cryptoDataFrame, datetime.datetime.now(), cryptoC)
+
+        trade = scalper.decideToTrade(cryptoDataFrame,tradeDataFrame)
+        if trade[5]== "BUY":
+            tradeDataFrame = updateTradeDataFrame(tradeDataFrame,trade)
+
+        pd.set_option('display.max_rows', 500)
+        pd.set_option('display.max_columns', 500)
+        pd.set_option('display.width', 150)
+        print(tradeDataFrame)
         time.sleep(mainUpdateDelta)
         currentTime = datetime.datetime.now()
-        pass
 
-    logout()
+    userLogout()
 
 if __name__ == "__main__":
     # Input # days login, # seconds update delta
